@@ -5,9 +5,14 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import urllib3
 import sqlite3
+import streamlit.components.v1 as components
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)  # 오류코드 삭제
 
+# ------------------------------------ bootstrap 기본코드 ------------------------------------
+bootstrap = '''<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+            <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>'''
 
 # ------------------------------------ 데이터 관련 ------------------------------------
 
@@ -16,7 +21,7 @@ url = "https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/" \
       "serviceKey=nwFe1iYXo5NL2z6yTKP2KjBGMP66OS5yhSLhL6P4Flb2k5bxzK%2F9cITnYVX%2BdHqysj8JUFZkZ6giylrVfeJ9eQ%3D%3D&" \
       "numOfRows=10000&" \
       "pageNo=1&" \
-      f"beginBasDt=20221001&" \
+      f"beginBasDt=20221101&" \
       "itmsNm=삼성전자"
 
 response = requests.get(url, verify=False)
@@ -58,6 +63,7 @@ def increment_counter(increment_value=0):
 def decrement_counter(decrement_value=0):
     st.session_state.count -= decrement_value
 
+
 # ------------------------------------ database ------------------------------------
 
 con = sqlite3.connect('stock.db')
@@ -90,24 +96,24 @@ seedmoney = 1000000  # 주식 시드머니(시작머니, 현재 100만원)
 
 # ------------------------------------ 수익계산관련 ------------------------------------
 
-query = curr.execute("SELECT * From user") #DB값 전체선택
-cols = [column[0] for column in query.description] #컬럼생성
+query = curr.execute("SELECT * From user")  # DB값 전체선택
+cols = [column[0] for column in query.description]  # 컬럼생성
 
-money_info = pd.DataFrame.from_records(data=query.fetchall(), columns=cols) #DB값으로 수익관련 DataFrame 생성
+money_info = pd.DataFrame.from_records(data=query.fetchall(), columns=cols)  # DB값으로 수익관련 DataFrame 생성
 st.dataframe(money_info)
 
-buysum = money_info['총매수금액'].sum()  # 총 매수금액
+buysum = money_info['매수금액'].sum()  # 총 매수금액
 st.write("총 매수금액 :", buysum)
 
-numsum = money_info['총매수량'].sum()  # 총 매수량
+numsum = money_info['매수량'].sum()  # 총 매수량
 st.write("총 매수량 :", numsum)
 
-
-if buysum == 0 or numsum == 0:
+if buysum == 0:
     평단가 = 0
 else:
     평단가 = int(buysum / numsum)
-    st.write("현재 평단가 :",평단가)
+
+st.write("현재 평단가 :", 평단가)
 
 매수가능금액 = seedmoney - buysum
 
@@ -115,7 +121,10 @@ else:
 
 손익 = 현재평가금액 - buysum
 
-수익률 = (손익 / buysum) * 100
+if 손익 == 0:
+    수익률 = 0
+else:
+    수익률 = (손익 / buysum) * 100
 
 # ------------------------------------ streamlit ------------------------------------
 
@@ -163,17 +172,34 @@ if menu == '현재가':
         Buynum = st.number_input('매수할 수량을 입력하세요.', min_value=1, step=1)  # 매수 수량입력
         Buybtn = st.button("매수하기")
         buyprice = int(cur) * Buynum
-        st.write("구매가격은 :",buyprice)
+        st.write("구매가격은 :", buyprice)
         if Buybtn:
-            if (매수가능금액 > 0):
-                curr.execute(f"INSERT INTO user(총매수금액, 총매수량)"
-                            f"VALUES({buyprice},{Buynum})")
-                con.commit()
+            if (buyprice <= 매수가능금액):
+                curr.execute(f"INSERT INTO user(매수금액, 매수량)"
+                             f"VALUES({buyprice},{Buynum})")
+                components.html(
+                    f"""
+                        {bootstrap}
+                        </div>
+                        <div class="alert alert-success" role="alert">
+                            매수계약이 체결되었습니다.
+                        </div>
+                    """
+                )
             else:
-                st.markdown("매수가능금액을 초과하였습니다.")
-        st.write("현재매수가능금액 :",매수가능금액)
+                components.html(
+                    f"""
+                        {bootstrap}
+                        </div>
+                        <div class="alert alert-danger" role="alert">
+                            매수가능금액을 초과하였습니다.
+                        </div>
+                    """
+                )
+        st.write("현재매수가능금액 :", 매수가능금액)
 
-    
     st.write(수익률)
 
-    
+    curr.execute(f"UPDATE user SET 총매수금액 = {buysum}")
+
+    con.commit()
