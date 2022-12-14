@@ -7,8 +7,6 @@ import urllib3
 import sqlite3
 import streamlit.components.v1 as components
 from streamlit_autorefresh import st_autorefresh
-import time
-import threading
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)  # 오류코드 삭제
 
@@ -65,7 +63,6 @@ def increment_counter(increment_value=0):
 
 def decrement_counter(decrement_value=0):
     st.session_state.count -= decrement_value
-
 
 # ------------------------------------ database ------------------------------------
 
@@ -162,13 +159,11 @@ if menu == '현재가':
         st.metric(label="현재가", value=cur + "원", delta=vsper + "%")
         st.write('전일대비등락률은 :', vsper)
 
-    # st.button('다음날짜', key='1', on_click=increment_counter,
-    #             kwargs=dict(increment_value=1))
+    st.button('다음날짜', key='1', on_click=increment_counter,
+                kwargs=dict(increment_value=1))
 
-    def nextpage():
-        increment_counter(increment_value=0)
-
-    threading.Timer(10, nextpage).start()
+    st.button('이전날짜', key='2', on_click=decrement_counter,
+              kwargs=dict(decrement_value=1))
 
     st.write('현재 인덱스 = ', st.session_state.count)
 
@@ -194,7 +189,7 @@ if menu == '현재가':
 
         Buynum = st.number_input('매수할 수량을 입력하세요.', min_value=1, step=1)  # 매수량
         buyprice = int(cur) * Buynum
-        Buybtn = st.button("매수하기", key='2')
+        Buybtn = st.button("매수하기")
 
         st.write("매수가격은 :", buyprice)
 
@@ -227,7 +222,7 @@ if menu == '현재가':
 
         Sellnum = st.number_input('매도할 수량을 입력하세요.', min_value=1, step=1)  # 매도량
         sellprice = int(cur) * Sellnum
-        Sellbtn = st.button("매도하기", key='3')
+        Sellbtn = st.button("매도하기")
 
         st.write("매도가격은 :", sellprice)
 
