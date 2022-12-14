@@ -1,3 +1,4 @@
+import time
 import requests
 import xmltodict
 import pandas as pd
@@ -6,6 +7,7 @@ import matplotlib.pyplot as plt
 import urllib3
 import sqlite3
 import streamlit.components.v1 as components
+from streamlit_autorefresh import st_autorefresh
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)  # 오류코드 삭제
 
@@ -105,19 +107,35 @@ st.dataframe(money_info)
 buysum = money_info['매수금액'].sum()  # 총 매수금액
 st.write("총 매수금액 :", buysum)
 
-numsum = money_info['매수량'].sum()  # 총 매수량
-st.write("총 매수량 :", numsum)
+buynumsum = money_info['매수량'].sum()  # 총 매수량
+st.write("총 매수량 :", buynumsum)
+
+sellsum = money_info['매도금액'].sum()  # 총 매도금액
+st.write("총 매도금액 :", sellsum)
+
+sellnumsum = money_info['매도량'].sum()  # 총 매도량
+st.write("총 매도량 :", sellnumsum)
+
+if buysum > 0:
+    총매수금액 = money_info["총매수금액"].loc[0]
+else:
+    총매수금액 = 0
+
+if buynumsum > 0:
+    보유수량 = money_info["보유수량"].loc[0]
+else:
+    보유수량 = 0
 
 if buysum == 0:
     평단가 = 0
 else:
-    평단가 = int(buysum / numsum)
+    평단가 = int(buysum / buynumsum)
 
 st.write("현재 평단가 :", 평단가)
 
 매수가능금액 = seedmoney - buysum
 
-현재평가금액 = int(cur) * numsum
+현재평가금액 = int(cur) * buynumsum
 
 손익 = 현재평가금액 - buysum
 
@@ -169,10 +187,14 @@ if menu == '현재가':
         st.pyplot(plt)
 
     with col3:
-        Buynum = st.number_input('매수할 수량을 입력하세요.', min_value=1, step=1)  # 매수 수량입력
-        Buybtn = st.button("매수하기")
+        st.write("현재매수가능금액 :", 매수가능금액)
+
+        Buynum = st.number_input('매수할 수량을 입력하세요.', min_value=1, step=1)  # 매수량
         buyprice = int(cur) * Buynum
-        st.write("구매가격은 :", buyprice)
+        Buybtn = st.button("매수하기")
+
+        st.write("매수가격은 :", buyprice)
+
         if Buybtn:
             if (buyprice <= 매수가능금액):
                 curr.execute(f"INSERT INTO user(매수금액, 매수량)"
@@ -186,6 +208,9 @@ if menu == '현재가':
                         </div>
                     """
                 )
+
+                st_autorefresh(interval=1000, limit=2, key="autorefresh")
+
             else:
                 components.html(
                     f"""
@@ -196,10 +221,55 @@ if menu == '현재가':
                         </div>
                     """
                 )
-        st.write("현재매수가능금액 :", 매수가능금액)
+
+        Sellnum = st.number_input('매도할 수량을 입력하세요.', min_value=1, step=1)  # 매도량
+        sellprice = int(cur) * Sellnum
+        Sellbtn = st.button("매도하기")
+
+        st.write("매도가격은 :", sellprice)
+
+        if Sellbtn:
+            if (보유수량 > 0):
+                curr.execute(f"INSERT INTO user(매도금액, 매도량)"
+                             f"VALUES({sellprice},{Sellnum})")
+
+                components.html(
+                    f"""
+                        {bootstrap}
+                        </div>
+                        <div class="alert alert-success" role="alert">
+                            매도계약이 체결되었습니다.
+                        </div>
+                    """
+                )
+                st_autorefresh(interval=1000, limit=2, key="autorefresh2")
+            else:
+                components.html(
+                    f"""
+                        {bootstrap}
+                        </div>
+                        <div class="alert alert-danger" role="alert">
+                            매도가능수량을 초과하였습니다.
+                        </div>
+                    """
+                )
+
 
     st.write(수익률)
 
     curr.execute(f"UPDATE user SET 총매수금액 = {buysum}")
+    curr.execute(f"UPDATE user SET 보유수량 = {buynumsum - sellnumsum}")
 
+    if 총매수금액 == buysum:
+        pass
+    else:
+        st_autorefresh(interval=1000, key="autorefresh3")
+
+    if 보유수량 == buynumsum - sellnumsum:
+        pass
+    else:
+        st_autorefresh(interval=1000, key="autorefresh4")
+
+    보유잔고 = seedmoney - buysum + sellsum
+    curr.execute(f"UPDATE user SET 보유잔고 = {보유잔고}")
     con.commit()
