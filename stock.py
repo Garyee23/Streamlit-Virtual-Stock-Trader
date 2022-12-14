@@ -265,12 +265,12 @@ if menu == '현재가':
     if 총매수금액 == buysum:
         pass
     else:
-        st_autorefresh(interval=1000, key="autorefresh3")
+        st_autorefresh(interval=5000, key="autorefresh3")
 
     if 보유수량 == buynumsum - sellnumsum:
         pass
     else:
-        st_autorefresh(interval=1000, key="autorefresh4")
+        st_autorefresh(interval=5000, key="autorefresh4")
 
     보유잔고 = seedmoney - buysum + sellsum
     curr.execute(f"UPDATE user SET 보유잔고 = {보유잔고}")
