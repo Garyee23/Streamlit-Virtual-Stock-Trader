@@ -187,7 +187,7 @@ if menu == '현재가':
         st.pyplot(plt)
 
     with col3:
-        st.write("현재매수가능금액 :", 매수가능금액)
+        st.write("현재매수가능금액 :", 보유잔고)
 
         Buynum = st.number_input('매수할 수량을 입력하세요.', min_value=1, step=1)  # 매수량
         buyprice = int(cur) * Buynum
