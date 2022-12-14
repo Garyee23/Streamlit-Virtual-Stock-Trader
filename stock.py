@@ -243,6 +243,12 @@ if menu == '현재가':
                     """
                 )
                 st_autorefresh(interval=1000, limit=2, key="autorefresh2")
+
+                평가금액 = 평단가 * Sellnum
+                수익률 = ((sellprice - 평가금액) / 평가금액) * 100
+                round(수익률, 4)
+                print(수익률)
+
             else:
                 components.html(
                     f"""
