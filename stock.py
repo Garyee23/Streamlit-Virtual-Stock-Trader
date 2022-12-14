@@ -142,6 +142,8 @@ if 손익 == 0:
 else:
     수익률 = (손익 / buysum) * 100
 
+보유잔고 = seedmoney - buysum + sellsum
+
 # ------------------------------------ streamlit ------------------------------------
 
 menu = st.sidebar.selectbox('MENU', options=['현재가', '로그인', '회원가입', '정보수정'])
@@ -261,6 +263,7 @@ if menu == '현재가':
 
     curr.execute(f"UPDATE user SET 총매수금액 = {buysum}")
     curr.execute(f"UPDATE user SET 보유수량 = {buynumsum - sellnumsum}")
+    curr.execute(f"UPDATE user SET 보유잔고 = {보유잔고}")
 
     if 총매수금액 == buysum:
         pass
@@ -272,6 +275,4 @@ if menu == '현재가':
     else:
         st_autorefresh(interval=5000, key="autorefresh4")
 
-    보유잔고 = seedmoney - buysum + sellsum
-    curr.execute(f"UPDATE user SET 보유잔고 = {보유잔고}")
     con.commit()
