@@ -1,4 +1,3 @@
-import time
 import requests
 import xmltodict
 import pandas as pd
@@ -8,6 +7,8 @@ import urllib3
 import sqlite3
 import streamlit.components.v1 as components
 from streamlit_autorefresh import st_autorefresh
+import time
+import threading
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)  # 오류코드 삭제
 
@@ -161,11 +162,13 @@ if menu == '현재가':
         st.metric(label="현재가", value=cur + "원", delta=vsper + "%")
         st.write('전일대비등락률은 :', vsper)
 
-    st.button('다음날짜', on_click=increment_counter,
-              kwargs=dict(increment_value=1))
+    # st.button('다음날짜', key='1', on_click=increment_counter,
+    #             kwargs=dict(increment_value=1))
 
-    st.button('이전날짜', on_click=decrement_counter,
-              kwargs=dict(decrement_value=1))
+    def nextpage():
+        increment_counter(increment_value=0)
+
+    threading.Timer(10, nextpage).start()
 
     st.write('현재 인덱스 = ', st.session_state.count)
 
@@ -191,7 +194,7 @@ if menu == '현재가':
 
         Buynum = st.number_input('매수할 수량을 입력하세요.', min_value=1, step=1)  # 매수량
         buyprice = int(cur) * Buynum
-        Buybtn = st.button("매수하기")
+        Buybtn = st.button("매수하기", key='2')
 
         st.write("매수가격은 :", buyprice)
 
@@ -224,14 +227,18 @@ if menu == '현재가':
 
         Sellnum = st.number_input('매도할 수량을 입력하세요.', min_value=1, step=1)  # 매도량
         sellprice = int(cur) * Sellnum
-        Sellbtn = st.button("매도하기")
+        Sellbtn = st.button("매도하기", key='3')
 
         st.write("매도가격은 :", sellprice)
 
         if Sellbtn:
             if (보유수량 > 0):
-                curr.execute(f"INSERT INTO user(매도금액, 매도량)"
-                             f"VALUES({sellprice},{Sellnum})")
+                평가금액 = 평단가 * Sellnum
+                수익률 = ((sellprice - 평가금액) / 평가금액) * 100
+                수익률 = round(수익률, 1)
+
+                curr.execute(f"INSERT INTO user(매도금액, 매도량, 수익률)"
+                             f"VALUES({sellprice},{Sellnum},{수익률})")
 
                 components.html(
                     f"""
@@ -243,13 +250,6 @@ if menu == '현재가':
                     """
                 )
                 st_autorefresh(interval=1000, limit=2, key="autorefresh2")
-
-                평가금액 = 평단가 * Sellnum
-                수익률 = ((sellprice - 평가금액) / 평가금액) * 100
-                수익률 = round(수익률, 4)
-
-                curr.execute(f"INSERT INTO user(수익률)"
-                            f"VALUES({수익률}")
             else:
                 components.html(
                     f"""
