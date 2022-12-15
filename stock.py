@@ -23,7 +23,7 @@ url = "https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/" \
       "numOfRows=10000&" \
       "pageNo=1&" \
       f"beginBasDt=20220901&" \
-      "itmsNm=위메이드 맥스"
+      "itmsNm=위메이드맥스"
 
 response = requests.get(url, verify=False)
 response = response.content
