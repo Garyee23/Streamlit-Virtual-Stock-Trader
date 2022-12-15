@@ -196,7 +196,7 @@ if menu == '현재가':
         st.write("매수가격은 :", buyprice)
 
         if Buybtn:
-            if (buyprice <= 매수가능금액):
+            if (buyprice <= 보유잔고):
                 curr.execute(f"INSERT INTO user(매수금액, 매수량)"
                              f"VALUES({buyprice},{Buynum})")
                 components.html(
