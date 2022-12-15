@@ -22,8 +22,8 @@ url = "https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/" \
       "serviceKey=nwFe1iYXo5NL2z6yTKP2KjBGMP66OS5yhSLhL6P4Flb2k5bxzK%2F9cITnYVX%2BdHqysj8JUFZkZ6giylrVfeJ9eQ%3D%3D&" \
       "numOfRows=10000&" \
       "pageNo=1&" \
-      f"beginBasDt=20220901&" \
-      "itmsNm=위메이드맥스"
+      f"beginBasDt=20221101&" \
+      "itmsNm=삼성전자"
 
 response = requests.get(url, verify=False)
 response = response.content
@@ -69,8 +69,11 @@ def decrement_counter(decrement_value=0):
 con = sqlite3.connect('stock.db')
 curr = con.cursor()
 
-money_df = pd.DataFrame({'구매금액': [], '구매수량': []})
-money_df_list = []
+query = curr.execute("SELECT * From user")  # DB값 전체선택
+cols = [column[0] for column in query.description]  # 컬럼생성
+
+money_info = pd.DataFrame.from_records(data=query.fetchall(), columns=cols)  # DB값으로 수익관련 DataFrame 생성
+st.dataframe(money_info)
 
 # ------------------------------------ 변수들 ------------------------------------
 
@@ -96,23 +99,13 @@ seedmoney = 1000000  # 주식 시드머니(시작머니, 현재 100만원)
 
 # ------------------------------------ 수익계산관련 ------------------------------------
 
-query = curr.execute("SELECT * From user")  # DB값 전체선택
-cols = [column[0] for column in query.description]  # 컬럼생성
-
-money_info = pd.DataFrame.from_records(data=query.fetchall(), columns=cols)  # DB값으로 수익관련 DataFrame 생성
-st.dataframe(money_info)
-
 buysum = money_info['매수금액'].sum()  # 총 매수금액
-st.write("총 매수금액 :", buysum)
 
 buynumsum = money_info['매수량'].sum()  # 총 매수량
-st.write("총 매수량 :", buynumsum)
 
 sellsum = money_info['매도금액'].sum()  # 총 매도금액
-st.write("총 매도금액 :", sellsum)
 
 sellnumsum = money_info['매도량'].sum()  # 총 매도량
-st.write("총 매도량 :", sellnumsum)
 
 if buysum > 0:
     총매수금액 = money_info["총매수금액"].loc[0]
@@ -129,11 +122,7 @@ if buysum == 0:
 else:
     평단가 = int(buysum / buynumsum)
 
-st.write("현재 평단가 :", 평단가)
-
-매수가능금액 = seedmoney - buysum
-
-현재평가금액 = int(cur) * buynumsum
+현재평가금액 = int(cur) * 보유수량
 
 손익 = 현재평가금액 - buysum
 
@@ -190,7 +179,7 @@ if menu == '현재가':
         st.write("현재매수가능금액 :", 보유잔고)
 
         Buynum = st.number_input('매수할 수량을 입력하세요.', min_value=1, step=1)  # 매수량
-        buyprice = int(cur) * Buynum
+        buyprice = int(cur) * Buynum # 총매수가격
         Buybtn = st.button("매수하기")
 
         st.write("매수가격은 :", buyprice)
@@ -258,8 +247,6 @@ if menu == '현재가':
                     """
                 )
 
-
-    st.write(수익률)
 
     curr.execute(f"UPDATE user SET 총매수금액 = {buysum}")
     curr.execute(f"UPDATE user SET 보유수량 = {buynumsum - sellnumsum}")
