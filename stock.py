@@ -22,8 +22,8 @@ url = "https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/" \
       "serviceKey=nwFe1iYXo5NL2z6yTKP2KjBGMP66OS5yhSLhL6P4Flb2k5bxzK%2F9cITnYVX%2BdHqysj8JUFZkZ6giylrVfeJ9eQ%3D%3D&" \
       "numOfRows=10000&" \
       "pageNo=1&" \
-      f"beginBasDt=20221101&" \
-      "itmsNm=삼성전자"
+      f"beginBasDt=20220901&" \
+      "itmsNm=위메이드 맥스"
 
 response = requests.get(url, verify=False)
 response = response.content
