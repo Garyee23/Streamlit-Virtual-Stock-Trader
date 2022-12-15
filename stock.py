@@ -69,12 +69,6 @@ def decrement_counter(decrement_value=0):
 con = sqlite3.connect('stock.db')
 curr = con.cursor()
 
-query = curr.execute("SELECT * From user")  # DB값 전체선택
-cols = [column[0] for column in query.description]  # 컬럼생성
-
-money_info = pd.DataFrame.from_records(data=query.fetchall(), columns=cols)  # DB값으로 수익관련 DataFrame 생성
-st.dataframe(money_info)
-
 # ------------------------------------ 변수들 ------------------------------------
 
 stock = df.loc[st.session_state.count]  # 현재 선택된 주식
@@ -98,6 +92,11 @@ chstock['price'] = chstock['clpr']
 seedmoney = 1000000  # 주식 시드머니(시작머니, 현재 100만원)
 
 # ------------------------------------ 수익계산관련 ------------------------------------
+query = curr.execute("SELECT * From user")  # DB값 전체선택
+cols = [column[0] for column in query.description]  # 컬럼생성
+
+money_info = pd.DataFrame.from_records(data=query.fetchall(), columns=cols)  # DB값으로 수익관련 DataFrame 생성
+st.dataframe(money_info)
 
 buysum = money_info['매수금액'].sum()  # 총 매수금액
 
